@@ -10,7 +10,7 @@
 #include <modbus/modbus.h>
 #include "typedefs.h"
 
-#define enableDebugTrace              (100000L - 1)
+
 #define realpoweroutput                   6
 #define RealPowerSetPoint             14007
 #define ReactivePowerSetPoint         14009

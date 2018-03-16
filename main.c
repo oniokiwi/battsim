@@ -24,12 +24,14 @@
 #define POWER_TO_DELIVER_URL_DEFAULT "http://localhost:1880"
 #define SUBMIT_READINGS_URL_DEFAULT  "http://localhost:1880/testpoint"
 
-const uint16_t UT_REGISTERS_NB = 100000;
+const uint16_t UT_REGISTERS_NB = 65535;
 static uint8_t query[MODBUS_TCP_MAX_ADU_LENGTH];
 
 #define MODBUS_DEFAULT_PORT 1502
 
 static init_param_t param;
+static uint16_t *address;
+static uint16_t address_offset;
 
 static void (*init)(init_param_t *);
 static void (*dispose)();
@@ -70,6 +72,9 @@ static void modbus_mem_init()
         printf("Failed to allocate the mapping: %s\n", modbus_strerror(errno));
         exit(1); // all bets are off
     }
+	address_offset = param.modbus_mapping->start_registers + enableDebugTrace;
+	address = param.modbus_mapping->tab_registers + address_offset;
+	*address = FALSE;
 }
 
 
@@ -150,6 +155,7 @@ int main(int argc, char* argv[])
     bool done = FALSE;
     init = init_default;
 
+
     modbus_mem_init();
     scan_options(argc, argv);
     init(&param);
@@ -162,6 +168,9 @@ int main(int argc, char* argv[])
             printf("Failed creating modbus context\n");
             return -1;
         }
+    	address_offset = param.modbus_mapping->start_registers + enableDebugTrace;
+    	address = param.modbus_mapping->tab_registers + address_offset;
+    	modbus_set_debug(param.ctx, *address);
         s = modbus_tcp_listen(param.ctx, 1);
         modbus_tcp_accept(param.ctx, &s);
         done = FALSE;
@@ -239,22 +248,21 @@ void query_handler(modbus_pdu_t* mb)
 	fc = mb->fcode;
 	switch ( fc ){
 	case MODBUS_FC_READ_HOLDING_REGISTERS:
-		printf("%s MODBUS_FC_READ_HOLDING_REGISTERS\n", __PRETTY_FUNCTION__);
+		//printf("%s MODBUS_FC_READ_HOLDING_REGISTERS\n", __PRETTY_FUNCTION__);
 		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
 		value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
-		printf("%s MODBUS_FC_READ_HOLDING_REGISTERS - address(%d), value(%d)\n", __PRETTY_FUNCTION__, address, value);
-		retval  = process_handler(address, value);
+        retval  = process_handler(address, value);
 		break;
 
 	case MODBUS_FC_WRITE_SINGLE_REGISTER:
-		printf("%s MODBUS_FC_WRITE_SINGLE_REGISTER\n", __PRETTY_FUNCTION__);
+		//printf("%s MODBUS_FC_WRITE_SINGLE_REGISTER\n", __PRETTY_FUNCTION__);
 		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
 		value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
 		retval  = process_handler(address, value);
 		break;
 
 	case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
-		printf("%s MODBUS_FC_WRITE_MULTIPLE_REGISTERS\n", __PRETTY_FUNCTION__);
+		//printf("%s MODBUS_FC_WRITE_MULTIPLE_REGISTERS\n", __PRETTY_FUNCTION__);
 		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
 		count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
 		i++;                                             // skip over byte count
@@ -264,14 +272,14 @@ void query_handler(modbus_pdu_t* mb)
 
 	case MODBUS_FC_WRITE_AND_READ_REGISTERS:
 		//printf("%s MODBUS_FC_WRITE_AND_READ_REGISTERS\n", __PRETTY_FUNCTION__);
-		//address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		//value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
-		//retval  = process_handler(address, value);
-		//address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		//count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
-		//i++;                                             // skip over byte count
-		//retval = process_write_multiple_addresses(address, count, &mb->data[i]);
-		//i += (count*2);
+		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+		value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
+		retval  = process_handler(address, value);
+		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+		count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
+		i++;                                             // skip over byte count
+		retval = process_write_multiple_addresses(address, count, &mb->data[i]);
+		i += (count*2);
 		break;
 
 	default:

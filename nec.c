@@ -50,7 +50,7 @@ static const int msbDataIndex                   = 0x00;
 static const int lsbDataIndex                   = 0x01;
 
 // private functions
-//static int _enableDebugTrace(uint16_t, uint16_t);
+static int _enableDebugTrace(uint16_t, uint16_t);
 static int _ackalarams (uint16_t, uint16_t);
 static int _averagesoc(uint16_t, uint16_t);
 static int _dispatchmode(uint16_t, uint16_t);
@@ -71,7 +71,7 @@ const char* OperatingModecontrolName(uint16_t val);
 //
 const process_table_t nec_process_table[] =
 {
-	//{enableDebugTrace,                      _enableDebugTrace},
+	{enableDebugTrace,                      _enableDebugTrace},
     {realpoweroutput,                        _realpoweroutput},
     {averagesoc,                                  _averagesoc},
     {RealPowerSetPoint,                    _RealPowerSetPoint},
@@ -89,12 +89,23 @@ const process_table_t nec_process_table[] =
 };
 
 
-//int _enableDebugTrace(uint16_t index, uint16_t value)
-//{
-//	bool val =  value & 0x0001;
-//	printf("%s - %s\n", __PRETTY_FUNCTION__, val?"TRUE":"FALSE");
-//	modbus_set_debug(param->ctx, val);
-//}
+int _enableDebugTrace(uint16_t index, uint16_t value)
+{
+	bool val =  value & 0x0001;
+    uint16_t *address;
+    uint16_t address_offset;
+    int retval = MODBUS_SUCCESS; // need to figure out what this constant is
+
+	printf("%s - %s\n", __PRETTY_FUNCTION__, val?"TRUE":"FALSE");
+	address_offset = mb_mapping->start_registers + enableDebugTrace;
+	address = mb_mapping->tab_registers + address_offset;
+	if ( address < (mb_mapping->tab_registers + mb_mapping-> nb_registers) )
+	{
+	   *address = value;
+	}
+	return retval;
+}
+
 //
 // Acks and dismisses alarms
 //
@@ -115,14 +126,13 @@ int _averagesoc(uint16_t index, uint16_t value)
     uint16_t address_offset;
     int retval = MODBUS_SUCCESS; // need to figure out what this constant is
 
-    printf("%s \n", __PRETTY_FUNCTION__ );
     address_offset = mb_mapping->start_registers + averagesoc;
     address = mb_mapping->tab_registers + address_offset;
     if ( address < (mb_mapping->tab_registers + mb_mapping-> nb_registers) )
     {
         *address = state_of_charge * averagesoc_multiplier;
     }
-
+    printf("%s - soc(%d) \n", __PRETTY_FUNCTION__, *address );
     return retval;
 }
 
@@ -361,8 +371,6 @@ int _SocRef (uint16_t index, uint16_t value)
 
 void nec_init(init_param_t* init_param)
 {
-    printf("%s entry\n", __PRETTY_FUNCTION__ );
-
     thread_param_t* nec_thread_param;
     setvbuf(stdout, NULL, _IONBF, 0);                          // disable stdout buffering
     mb_mapping = init_param->modbus_mapping;
@@ -370,8 +378,6 @@ void nec_init(init_param_t* init_param)
     nec_thread_param = (thread_param_t*) malloc(sizeof (thread_param_t));
     nec_thread_param -> terminate = &terminate1;
     pthread_create( &thread1, NULL, nec_thread_handler, nec_thread_param);
-    param = init_param;
-    printf("%s exit\n", __PRETTY_FUNCTION__ );
 }
 
 void nec_dispose()
@@ -387,17 +393,14 @@ int nec_process_single_register(uint16_t address, uint16_t data)
 {
     int retval = MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
 
-    printf("%s -address(%d), data(%d)\n", __PRETTY_FUNCTION__, address, data);
     for ( const process_table_t *p = nec_process_table; p->handler != 0; p++ )
     {
         if ( address == p->address )
         {
-            printf("%s -address found\n", __PRETTY_FUNCTION__);
             retval = p->handler(address, data);
             break;
         }
     }
-
     return retval;
 }
 
@@ -418,8 +421,6 @@ int nec_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint
             *address++  = (*pdata++ << 8) | *pdata++;
         }
     }
-
-
     return retval;
 }
 
@@ -430,7 +431,6 @@ void *nec_thread_handler( void *ptr )
 {
     char *terminate;
     char status[12] = "idle";
-    printf("nec_thread_handler\n");
 
     thread_param_t* param = (thread_param_t*) ptr;
     ctx = param->ctx;
@@ -444,7 +444,7 @@ void *nec_thread_handler( void *ptr )
         if ( heartbeat > HeartBeatIntervalInSeconds )
         {
             heartbeat = 0;
-            printf("heatbeat not received\n");
+            //printf("heatbeat not received\n");
         }
         if ( dispatch_mode_enable == DispatchModeDispatch )
         {
@@ -481,6 +481,5 @@ void *nec_thread_handler( void *ptr )
         }
         heartbeat++;
     }
-    //printf("exiting thread handler\n");
 }
 
