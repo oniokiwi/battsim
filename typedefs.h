@@ -11,8 +11,8 @@
 
 //typedef enum {false, true} bool;
 
-#define MODBUS_SUCCESS  0
-#define enableDebugTrace                      999
+#define MODBUS_SUCCESS      0
+#define enableDebugTrace    0
 
 typedef enum CURL_MESSAGE_TYPE
 {

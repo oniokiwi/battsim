@@ -19,7 +19,7 @@
 // Private data
 static modbus_t* ctx;
 static modbus_mapping_t *mb_mapping;
-static bool debug = false;
+static uint16_t debug = 0;
 static init_param_t *param;
 
 static pthread_t thread1;
@@ -43,76 +43,121 @@ static const float battery_charge_resolution    = 100.00 / (BATTERY_POWER_RATING
 static const float battery_discharge_resolution = 100.00 / (BATTERY_POWER_RATING * TIME_DISCHARGE_FROM_100_TO_0);  // % decrease in charge per sec
 static const float battery_fully_charged        = 100.00;
 static const float battery_fully_discharged     = 0.0;
-static const int ByteToWordConversionValue      = 256;
-static const int FunctionCodeIndex              = 7;
-static const int ReadWriteOperation             = 0x17;
-static const int msbDataIndex                   = 0x00;
-static const int lsbDataIndex                   = 0x01;
 
 // private functions
-static int _enableDebugTrace(uint16_t, uint16_t);
-static int _ackalarams (uint16_t, uint16_t);
-static int _averagesoc(uint16_t, uint16_t);
-static int _dispatchmode(uint16_t, uint16_t);
-static int _HeartbeatFromPGM (uint16_t, uint16_t);
-static int _modecontrol(uint16_t, uint16_t);
-static int _powerblockenablecontrol12H (uint16_t, uint16_t);
-static int _powerblockenablecontrol12L(uint16_t, uint16_t);
-static int _realpoweroutput(uint16_t, uint16_t);
-static int _ReactivePowerSetPoint(uint16_t, uint16_t);
-static int _RealPowerSetPoint(uint16_t, uint16_t);
-static int _SocRef(uint16_t, uint16_t);
-static int _pslewrate(uint16_t, uint16_t);
-static int _qslewrate(uint16_t, uint16_t);
+static int _enableDebugTrace(uint16_t);
+static int _ackalarams (uint16_t);
+static int _averagesoc();
+static int _dispatchmode(uint16_t);
+static int _HeartbeatFromPGM(uint16_t);
+static int _modecontrol(uint16_t);
+static int _powerblockenablecontrol12H (uint16_t);
+static int _powerblockenablecontrol12L(uint16_t);
+static int _realpoweroutput();
+static int _ReactivePowerSetPoint(uint16_t);
+static int _RealPowerSetPoint(uint16_t);
+static int _SocRef(uint16_t);
+static int _pslewrate(uint16_t);
+static int _qslewrate(uint16_t);
 
 const char* OperatingModecontrolName(uint16_t val);
 //
 // Lookup table for process functions
 //
-const process_table_t nec_process_table[] =
+int nec_process_single_register(uint16_t address, uint16_t data)
 {
-	{enableDebugTrace,                      _enableDebugTrace},
-    {realpoweroutput,                        _realpoweroutput},
-    {averagesoc,                                  _averagesoc},
-    {RealPowerSetPoint,                    _RealPowerSetPoint},
-    {ReactivePowerSetPoint,            _ReactivePowerSetPoint},
-    {modecontrol,                                _modecontrol},
-    {powerblockenablecontrol12H,  _powerblockenablecontrol12H},
-    {powerblockenablecontrol12L,  _powerblockenablecontrol12L},
-    {HeartbeatFromPGM,                      _HeartbeatFromPGM},
-    {SocRef,                                          _SocRef},
-    {dispatchmode,                              _dispatchmode},
-    {ackalarams,                                  _ackalarams},
-    {pslewrate,                                    _pslewrate},
-    {qslewrate,                                    _qslewrate},
-    {0,                                                  NULL}
-};
+    int retval;
+
+    switch ( address )
+    {
+        case enableDebugTrace: // Not a modbus register
+            retval = _enableDebugTrace(data);
+            break;
+
+        case realpoweroutput:
+            retval = _realpoweroutput();
+            break;
+
+        case averagesoc:
+            retval = _averagesoc();
+            break;
+
+        case RealPowerSetPoint:
+            retval = _RealPowerSetPoint(data);
+            break;
+
+        case ReactivePowerSetPoint:
+            retval = _ReactivePowerSetPoint(data);
+            break;
+
+        case modecontrol:
+            retval = _modecontrol(data);
+            break;
+
+        case powerblockenablecontrol12H:
+            retval = _powerblockenablecontrol12H(data);
+            break;
+
+        case powerblockenablecontrol12L:
+            retval = _powerblockenablecontrol12L(data);
+            break;
+
+        case HeartbeatFromPGM:
+            retval = _HeartbeatFromPGM(data);
+            break;
+
+        case SocRef:
+            retval = _SocRef(data);
+            break;
+
+        case dispatchmode:
+            retval = _dispatchmode(data);
+            break;
+
+        case ackalarams:
+            retval = _ackalarams(data);
+            break;
+
+        case pslewrate:
+            retval = _pslewrate(data);
+            break;
+
+        case qslewrate:
+            _qslewrate(data);
+            break;
+
+        default:
+            retval = MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
+            break;
+
+    }
+    return retval;
+}
 
 
-int _enableDebugTrace(uint16_t index, uint16_t value)
+int _enableDebugTrace(uint16_t value)
 {
-	bool val =  value & 0x0001;
+    debug =  value & 0x0001;
     uint16_t *address;
     uint16_t address_offset;
-    int retval = MODBUS_SUCCESS; // need to figure out what this constant is
 
-	printf("%s - %s\n", __PRETTY_FUNCTION__, val?"TRUE":"FALSE");
-	address_offset = mb_mapping->start_registers + enableDebugTrace;
-	address = mb_mapping->tab_registers + address_offset;
-	if ( address < (mb_mapping->tab_registers + mb_mapping-> nb_registers) )
-	{
-	   *address = value;
-	}
-	return retval;
+    printf("%s - %s\n", __PRETTY_FUNCTION__, debug?"TRUE":"FALSE");
+    address_offset = mb_mapping->start_registers + enableDebugTrace;
+    address = mb_mapping->tab_registers + address_offset;
+    if ( address < (mb_mapping->tab_registers + mb_mapping-> nb_registers) )
+    {
+       *address = debug;
+    }
+    return MODBUS_SUCCESS;
 }
 
 //
 // Acks and dismisses alarms
 //
-int _ackalarams (uint16_t index, uint16_t value)
+int _ackalarams (uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
-    printf("%s\n", __PRETTY_FUNCTION__);
+    if (debug) printf("%s\n", __PRETTY_FUNCTION__);
     //alarm(val);
     return retval;
 }
@@ -120,7 +165,7 @@ int _ackalarams (uint16_t index, uint16_t value)
 //
 // Average SOC currently online
 //
-int _averagesoc(uint16_t index, uint16_t value)
+int _averagesoc()
 {
     uint16_t *address;
     uint16_t address_offset;
@@ -132,7 +177,7 @@ int _averagesoc(uint16_t index, uint16_t value)
     {
         *address = state_of_charge * averagesoc_multiplier;
     }
-    printf("%s - soc(%d) \n", __PRETTY_FUNCTION__, *address );
+    if (debug) printf("%s - soc(%d) \n", __PRETTY_FUNCTION__, *address );
     return retval;
 }
 
@@ -142,10 +187,10 @@ int _averagesoc(uint16_t index, uint16_t value)
 //     0: idle
 //     1: dispatch
 //
-int _dispatchmode(uint16_t index, uint16_t value)
+int _dispatchmode(uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
 
     switch (value)
     {
@@ -164,22 +209,20 @@ int _dispatchmode(uint16_t index, uint16_t value)
 //
 // Heartbeat signal. Expected to toggle heartbeat bit very PGM HB Period
 //
-int _HeartbeatFromPGM (uint16_t index, uint16_t value)
+int _HeartbeatFromPGM (uint16_t value)
 {
-    int retval = MODBUS_SUCCESS;
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
-    static int toggle = 0;
+    static uint16_t toggle = 0;
     uint16_t val = value;
 
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
     val &= HeartbeatFromPGMask;   // mask off unwanted bits
     if ( toggle ^ val )
     {
         toggle = val;
         heartbeat = 0;
     }
-    return retval;
+    return MODBUS_SUCCESS;
 }
-
 
 //
 // Operating mode of GBS.
@@ -187,10 +230,10 @@ int _HeartbeatFromPGM (uint16_t index, uint16_t value)
 //     4: Manual
 //    32: Operational
 //
-int _modecontrol(uint16_t index, uint16_t value)
+int _modecontrol(uint16_t value)
 {
     int retval = MODBUS_SUCCESS; // need to figure out what this constant is
-    printf("%s %s, value(%d)\n", __PRETTY_FUNCTION__, OperatingModecontrolName(value), value);
+    if (debug) printf("%s %s, value(%d)\n", __PRETTY_FUNCTION__, OperatingModecontrolName(value), value);
 
     switch (value)
     {
@@ -209,11 +252,11 @@ int _modecontrol(uint16_t index, uint16_t value)
 //
 // Controls which power blocks will be active for the Control Group
 //
-int _powerblockenablecontrol12H (uint16_t index, uint16_t value)
+int _powerblockenablecontrol12H (uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
 
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
 
     return retval;
 }
@@ -222,11 +265,11 @@ int _powerblockenablecontrol12H (uint16_t index, uint16_t value)
 //
 // Controls which power blocks will be active for the Control Group
 //
-int _powerblockenablecontrol12L (uint16_t index, uint16_t value)
+int _powerblockenablecontrol12L (uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
 
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
 
     return retval;
 }
@@ -236,14 +279,14 @@ int _powerblockenablecontrol12L (uint16_t index, uint16_t value)
 //
 // Total real power being delivered in kW: range(-32768  to 32767)
 //
-int _realpoweroutput(uint16_t index, uint16_t value)
+int _realpoweroutput()
 {
     int retval = MODBUS_SUCCESS;
     int val;
     uint16_t *address;
     uint16_t address_offset;
 
-    printf("%s \n", __PRETTY_FUNCTION__ );
+    if (debug) printf("%s \n", __PRETTY_FUNCTION__ );
 
     if (battery_charging)
     {
@@ -271,7 +314,7 @@ int _realpoweroutput(uint16_t index, uint16_t value)
 //
 // Real power command in kW: range(-32768  to 32767)
 //
-int _RealPowerSetPoint(uint16_t index, uint16_t value)
+int _RealPowerSetPoint(uint16_t value)
 {
 
     int retval = MODBUS_SUCCESS;
@@ -281,21 +324,21 @@ int _RealPowerSetPoint(uint16_t index, uint16_t value)
     if ( val & sign_bit_mask )
     {
         val = ((~val) + 1);                            // get 2nd complement value
-        printf("%s - battery charging val(-%d)\n", __PRETTY_FUNCTION__, val);
+        if (debug) printf("%s - battery charging val(-%d)\n", __PRETTY_FUNCTION__, val);
         battery_charging = true;
         battery_discharging = false;
         battery_charge_increment = ( val * battery_charge_resolution);  ;
     }
     else if (val > 0)
     {
-        printf("%s - battery discharging val(%d)\n", __PRETTY_FUNCTION__, val);
+        if (debug) printf("%s - battery discharging val(%d)\n", __PRETTY_FUNCTION__, val);
         battery_discharging = true;
         battery_charging = false;
         battery_discharge_decrement = (val * battery_discharge_resolution);
     }
     else
     {
-        printf("%s - not charging val(%d)\n", __PRETTY_FUNCTION__, val);
+        if (debug) printf("%s - not charging val(%d)\n", __PRETTY_FUNCTION__, val);
         battery_discharging = false;
         battery_charging = false;
     }
@@ -306,11 +349,11 @@ int _RealPowerSetPoint(uint16_t index, uint16_t value)
 //
 // Reactive power command in kW: range(-32768  to 32767)
 //
-int _ReactivePowerSetPoint(uint16_t index, uint16_t value)
+int _ReactivePowerSetPoint(uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
 
-    printf("%s value %d\n", __PRETTY_FUNCTION__, value);
+    if (debug) printf("%s value %d\n", __PRETTY_FUNCTION__, value);
 
     return retval;
 }
@@ -318,11 +361,11 @@ int _ReactivePowerSetPoint(uint16_t index, uint16_t value)
 //
 // pslewrate
 //
-int _pslewrate(uint16_t index, uint16_t value)
+int _pslewrate(uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
 
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
 
     return retval;
 }
@@ -330,11 +373,11 @@ int _pslewrate(uint16_t index, uint16_t value)
 //
 // qslewrate
 //
-int _qslewrate(uint16_t index, uint16_t value)
+int _qslewrate(uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
 
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
     return retval;
 }
 
@@ -361,10 +404,10 @@ const char* OperatingModecontrolName(uint16_t val)
 //
 // Acks and dismisses alarms
 //
-int _SocRef (uint16_t index, uint16_t value)
+int _SocRef (uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
-    printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
+    if (debug) printf("%s val(%d)\n", __PRETTY_FUNCTION__, value );
     return retval;
 }
 
@@ -382,35 +425,16 @@ void nec_init(init_param_t* init_param)
 
 void nec_dispose()
 {
-    printf("%s entry\n", __PRETTY_FUNCTION__ );
     terminate1 = true;
     pthread_join(thread1, NULL);
-    printf("%s exit\n", __PRETTY_FUNCTION__ );
 }
 
-
-int nec_process_single_register(uint16_t address, uint16_t data)
-{
-    int retval = MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
-
-    for ( const process_table_t *p = nec_process_table; p->handler != 0; p++ )
-    {
-        if ( address == p->address )
-        {
-            retval = p->handler(address, data);
-            break;
-        }
-    }
-    return retval;
-}
 
 int nec_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint8_t* pdata)
 {
-    int retval = MODBUS_SUCCESS;
-
-    int i;
     uint16_t *address;
     uint16_t address_offset;
+    uint16_t i, data;
 
     address_offset = mb_mapping->start_registers + start_address;
     address = mb_mapping->tab_registers + address_offset;
@@ -418,10 +442,12 @@ int nec_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint
     {
         if ( address < (mb_mapping->tab_registers + mb_mapping-> nb_registers) )
         {
-            *address++  = (*pdata++ << 8) | *pdata++;
+            data = (*pdata++ << 8) | *pdata++;
+            *address++  = data;
+            nec_process_single_register(start_address + i, data);
         }
     }
-    return retval;
+    return MODBUS_SUCCESS;
 }
 
 //
@@ -429,9 +455,7 @@ int nec_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint
 //
 void *nec_thread_handler( void *ptr )
 {
-    char *terminate;
-    char status[12] = "idle";
-
+    uint8_t *terminate;
     thread_param_t* param = (thread_param_t*) ptr;
     ctx = param->ctx;
     terminate = param->terminate;
@@ -444,13 +468,12 @@ void *nec_thread_handler( void *ptr )
         if ( heartbeat > HeartBeatIntervalInSeconds )
         {
             heartbeat = 0;
-            //printf("heatbeat not received\n");
+            if (debug) printf("heatbeat not received\n");
         }
         if ( dispatch_mode_enable == DispatchModeDispatch )
         {
             if (battery_charging)
             {
-                strcpy(status,"charging");
                 if ( (state_of_charge + battery_charge_increment) <= battery_fully_charged )
                 {
                     state_of_charge += battery_charge_increment;
@@ -463,7 +486,6 @@ void *nec_thread_handler( void *ptr )
             }
             else if (battery_discharging)
             {
-                strcpy(status,"discharging");
                 if ( (state_of_charge - battery_discharge_decrement) >= battery_fully_discharged )
                 {
                     state_of_charge -= battery_discharge_decrement;
@@ -473,10 +495,6 @@ void *nec_thread_handler( void *ptr )
                     state_of_charge = battery_fully_discharged;
                     battery_discharging = false;
                 }
-            }
-            else
-            {
-                strcpy(status,"idle");
             }
         }
         heartbeat++;
