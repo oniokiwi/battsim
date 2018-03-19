@@ -165,9 +165,9 @@ int _ahc_echo(void * cls,
 
 int _DebugEnable(uint16_t data)
 {
-	bool val =  data & 0x0001;
-	printf("%s - %s\n", __PRETTY_FUNCTION__, val?"TRUE":"FALSE");
-	modbus_set_debug(ctx, val);
+    bool val =  data & 0x0001;
+    printf("%s - %s\n", __PRETTY_FUNCTION__, val?"TRUE":"FALSE");
+    modbus_set_debug(ctx, val);
 }
 
 int _getStateOfCharge ()
@@ -252,8 +252,8 @@ int  engienl_process_single_register(uint16_t address, uint16_t data)
     switch (address)
     {
     case DebugEnable:
-    	_DebugEnable(data);
-    	break;
+        _DebugEnable(data);
+        break;
 
     case StateOfCharge:
         _getStateOfCharge();

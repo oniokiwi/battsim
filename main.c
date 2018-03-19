@@ -54,14 +54,14 @@ static void usage(const char *app_name)
 
 static void init_default(init_param_t * param)
 {
-	const char *app_name = "mbservsim";
+    const char *app_name = "mbservsim";
     usage(app_name);
     exit(1);
 }
 
 static void modbus_mem_init()
 {
-	param.modbus_mapping = modbus_mapping_new_start_address(
+    param.modbus_mapping = modbus_mapping_new_start_address(
        0, 0,
        0, 0,
        0, UT_REGISTERS_NB,
@@ -72,20 +72,20 @@ static void modbus_mem_init()
         printf("Failed to allocate the mapping: %s\n", modbus_strerror(errno));
         exit(1); // all bets are off
     }
-	address_offset = param.modbus_mapping->start_registers + enableDebugTrace;
-	address = param.modbus_mapping->tab_registers + address_offset;
-	*address = FALSE;
+    address_offset = param.modbus_mapping->start_registers + enableDebugTrace;
+    address = param.modbus_mapping->tab_registers + address_offset;
+    *address = FALSE;
 }
 
 
 static void scan_options(int argc, char* argv[])
 {
-	int opt;
+    int opt;
 
-	// set some default options
-	param.port = MODBUS_DEFAULT_PORT;
-	strncpy(param.powerToDeliverURL, POWER_TO_DELIVER_URL_DEFAULT, strlen(POWER_TO_DELIVER_URL_DEFAULT));
-	strncpy(param.submitReadingsURL, SUBMIT_READINGS_URL_DEFAULT, strlen(SUBMIT_READINGS_URL_DEFAULT));
+    // set some default options
+    param.port = MODBUS_DEFAULT_PORT;
+    strncpy(param.powerToDeliverURL, POWER_TO_DELIVER_URL_DEFAULT, strlen(POWER_TO_DELIVER_URL_DEFAULT));
+    strncpy(param.submitReadingsURL, SUBMIT_READINGS_URL_DEFAULT, strlen(SUBMIT_READINGS_URL_DEFAULT));
 
     while ((opt = getopt(argc, argv, "p:u:k:t:")) != -1)
     {
@@ -95,51 +95,51 @@ static void scan_options(int argc, char* argv[])
             param.port = atoi(optarg);
             break;
         case 'u':
-        	strncpy(param.powerToDeliverURL, optarg, strlen(optarg));
+            strncpy(param.powerToDeliverURL, optarg, strlen(optarg));
             break;
         case 'k':
-        	strncpy(param.submitReadingsURL, optarg, strlen(optarg));
+            strncpy(param.submitReadingsURL, optarg, strlen(optarg));
             break;
 
         case 't':
-        	if (strncmp("TESLA", optarg, strlen(optarg)) == 0)
-        	{
-				init = tesla_init;
-				dispose = tesla_dispose;
-				process_handler = tesla_process_single_register;
-				process_write_multiple_addresses = tesla_write_multiple_addresses;
-				printf("starting tesla battery simulator application - port (%d)\n", param.port);
-        	}
-        	else if (strncmp("NEC", optarg, strlen(optarg)) == 0)
-        	{
-				init = nec_init;
-				dispose = nec_dispose;
-				process_handler = nec_process_single_register;
-				process_write_multiple_addresses = nec_write_multiple_addresses;
-				printf("starting nec battery simulator application - port (%d)\n", param.port);
-        	}
-        	else if (strncmp("ENGIENL", optarg, strlen(optarg)) == 0)
-        	{
-				init = engienl_init;
-				dispose = engienl_dispose;
-				process_handler = engienl_process_single_register;
-				process_write_multiple_addresses = engienl_write_multiple_addresses;
-				printf("starting engienl battery simulator application - port (%d) "
-						"powerToDeliverURL (%s) "
-						"submitReadingsURL (%s)\n",
-						param.port, param.powerToDeliverURL, param.submitReadingsURL);
-        	}
-        	else if (strncmp("BASEPOWER", optarg, strlen(optarg)) == 0)
-        	{
-				//init = basepower_init;
-				//dispose = basepower_dispose;
-				//process_handler = basepower_process_single_register;
-				printf("starting basepower battery simulator application - port (%d)\n", param.port);
-        	}
-        	else
-        	{
-        		usage(*argv);
-        	}
+            if (strncmp("TESLA", optarg, strlen(optarg)) == 0)
+            {
+                init = tesla_init;
+                dispose = tesla_dispose;
+                process_handler = tesla_process_single_register;
+                process_write_multiple_addresses = tesla_write_multiple_addresses;
+                printf("starting tesla battery simulator application - port (%d)\n", param.port);
+            }
+            else if (strncmp("NEC", optarg, strlen(optarg)) == 0)
+            {
+                init = nec_init;
+                dispose = nec_dispose;
+                process_handler = nec_process_single_register;
+                process_write_multiple_addresses = nec_write_multiple_addresses;
+                printf("starting nec battery simulator application - port (%d)\n", param.port);
+            }
+            else if (strncmp("ENGIENL", optarg, strlen(optarg)) == 0)
+            {
+                init = engienl_init;
+                dispose = engienl_dispose;
+                process_handler = engienl_process_single_register;
+                process_write_multiple_addresses = engienl_write_multiple_addresses;
+                printf("starting engienl battery simulator application - port (%d) "
+                        "powerToDeliverURL (%s) "
+                        "submitReadingsURL (%s)\n",
+                        param.port, param.powerToDeliverURL, param.submitReadingsURL);
+            }
+            else if (strncmp("BASEPOWER", optarg, strlen(optarg)) == 0)
+            {
+                //init = basepower_init;
+                //dispose = basepower_dispose;
+                //process_handler = basepower_process_single_register;
+                printf("starting basepower battery simulator application - port (%d)\n", param.port);
+            }
+            else
+            {
+                usage(*argv);
+            }
             break;
 
         default:
@@ -150,7 +150,7 @@ static void scan_options(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	void query_handler(modbus_pdu_t* mb);
+    void query_handler(modbus_pdu_t* mb);
     int rc, s = -1;
     bool done = FALSE;
     init = init_default;
@@ -168,9 +168,9 @@ int main(int argc, char* argv[])
             printf("Failed creating modbus context\n");
             return -1;
         }
-    	address_offset = param.modbus_mapping->start_registers + enableDebugTrace;
-    	address = param.modbus_mapping->tab_registers + address_offset;
-    	modbus_set_debug(param.ctx, *address);
+        address_offset = param.modbus_mapping->start_registers + enableDebugTrace;
+        address = param.modbus_mapping->tab_registers + address_offset;
+        modbus_set_debug(param.ctx, *address);
         s = modbus_tcp_listen(param.ctx, 1);
         modbus_tcp_accept(param.ctx, &s);
         done = FALSE;
@@ -245,46 +245,46 @@ void query_handler(modbus_pdu_t* mb)
     uint8_t fc;
 
    // for ( i = 0; i < len; i++ ) {
-	fc = mb->fcode;
-	switch ( fc ){
-	case MODBUS_FC_READ_HOLDING_REGISTERS:
-		//printf("%s MODBUS_FC_READ_HOLDING_REGISTERS\n", __PRETTY_FUNCTION__);
-		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
+    fc = mb->fcode;
+    switch ( fc ){
+    case MODBUS_FC_READ_HOLDING_REGISTERS:
+        //printf("%s MODBUS_FC_READ_HOLDING_REGISTERS\n", __PRETTY_FUNCTION__);
+        address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+        value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
         retval  = process_handler(address, value);
-		break;
+        break;
 
-	case MODBUS_FC_WRITE_SINGLE_REGISTER:
-		//printf("%s MODBUS_FC_WRITE_SINGLE_REGISTER\n", __PRETTY_FUNCTION__);
-		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
-		retval  = process_handler(address, value);
-		break;
+    case MODBUS_FC_WRITE_SINGLE_REGISTER:
+        //printf("%s MODBUS_FC_WRITE_SINGLE_REGISTER\n", __PRETTY_FUNCTION__);
+        address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+        value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
+        retval  = process_handler(address, value);
+        break;
 
-	case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
-		//printf("%s MODBUS_FC_WRITE_MULTIPLE_REGISTERS\n", __PRETTY_FUNCTION__);
-		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
-		i++;                                             // skip over byte count
-		retval = process_write_multiple_addresses(address, count, &mb->data[i]);
-		i += (count*2);
-		break;
+    case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+        //printf("%s MODBUS_FC_WRITE_MULTIPLE_REGISTERS\n", __PRETTY_FUNCTION__);
+        address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+        count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
+        i++;                                             // skip over byte count
+        retval = process_write_multiple_addresses(address, count, &mb->data[i]);
+        i += (count*2);
+        break;
 
-	case MODBUS_FC_WRITE_AND_READ_REGISTERS:
-		//printf("%s MODBUS_FC_WRITE_AND_READ_REGISTERS\n", __PRETTY_FUNCTION__);
-		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
-		retval  = process_handler(address, value);
-		address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
-		count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
-		i++;                                             // skip over byte count
-		retval = process_write_multiple_addresses(address, count, &mb->data[i]);
-		i += (count*2);
-		break;
+    case MODBUS_FC_WRITE_AND_READ_REGISTERS:
+        //printf("%s MODBUS_FC_WRITE_AND_READ_REGISTERS\n", __PRETTY_FUNCTION__);
+        address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+        value   = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // data
+        retval  = process_handler(address, value);
+        address = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++]; // address
+        count = (mb->data[i++] * convert_bytes2word_value) + mb->data[i++];   // register count
+        i++;                                             // skip over byte count
+        retval = process_write_multiple_addresses(address, count, &mb->data[i]);
+        i += (count*2);
+        break;
 
-	default:
-		retval = MODBUS_EXCEPTION_ILLEGAL_FUNCTION;
-		break;
+    default:
+        retval = MODBUS_EXCEPTION_ILLEGAL_FUNCTION;
+        break;
         }
    // }
     if ( retval == MODBUS_SUCCESS)

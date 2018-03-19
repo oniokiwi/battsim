@@ -84,7 +84,7 @@ void curl_sendReadings(const char* readings, int length)
 
 void _send_text_plain(const char* payload)
 {
-	const int payloadLength = 128;
+    const int payloadLength = 128;
     struct curl_slist *headers = NULL;
     curl = curl_easy_init();
 
@@ -92,8 +92,8 @@ void _send_text_plain(const char* payload)
     {
         char buf[payloadLength];
         sprintf(buf, "%s%s", powerURL, payload);
-		curl_slist_append(headers, "Content-Type: text/plain");
-		curl_slist_append(headers, "charsets: utf-8");
+        curl_slist_append(headers, "Content-Type: text/plain");
+        curl_slist_append(headers, "charsets: utf-8");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_URL, buf);
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
@@ -115,29 +115,29 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 
 void _send_application_json(const char* payload, int length)
 {
-	FILE *fp;
-	struct stat file_info;
+    FILE *fp;
+    struct stat file_info;
     const char* file = SUBMIT_READINGS_FILE;
     fp = fopen ( file, "wb");
     if ( fp )
     {
-    	fwrite(payload, length, 1, fp);
+        fwrite(payload, length, 1, fp);
         fclose(fp);
     }
-	stat(file, &file_info);
-	fp = fopen(file, "rb");
-	curl = curl_easy_init();
+    stat(file, &file_info);
+    fp = fopen(file, "rb");
+    curl = curl_easy_init();
     if (curl)
     {
-	    curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
-	    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-	    curl_easy_setopt(curl, CURLOPT_PUT, 1L);
-	    curl_easy_setopt(curl, CURLOPT_URL, readingsURL);
-	    curl_easy_setopt(curl, CURLOPT_READDATA, fp);
-	    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-	                     (curl_off_t)file_info.st_size);
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+        curl_easy_setopt(curl, CURLOPT_PUT, 1L);
+        curl_easy_setopt(curl, CURLOPT_URL, readingsURL);
+        curl_easy_setopt(curl, CURLOPT_READDATA, fp);
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
+                         (curl_off_t)file_info.st_size);
 
-		curl_easy_perform(curl);
+        curl_easy_perform(curl);
     }
     fclose(fp); /* close the local file */
     curl_easy_cleanup(curl);
