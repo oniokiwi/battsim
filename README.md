@@ -1,11 +1,11 @@
-# mb2http 
+# battsim
 
 This project is used to convert modbus messages to http. The project has dependencies on libmodbus and libcurl 
 The project supports command line argument for the destination IP address and port number.
 
 In order to see list of argument supported see the help by issuing the following command
 
-$ ./mb2http -h
+$ ./battsim -h
 
 To build simply clone and build using the command below 
 $ make 
