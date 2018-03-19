@@ -44,57 +44,92 @@ static const float battery_fully_charged        = 100.00;
 static const float battery_fully_discharged     = 0.0;
 static float state_of_charge = STATE_OF_CHARGET_DEFAULT;
 
-//
-// Lookup table for process functions
-//
-const process_table_t tesla_process_table[] =
+// proclet
+static int _enableDebugTrace (uint16_t );
+static int _dumpMemory (uint16_t, uint16_t );
+static int _firmwareVersion (uint16_t );
+static int _directRealTimeout (uint16_t );
+static int _directRealHeartbeat(uint16_t );
+static int _statusFullChargeEnergy();
+static int _statusNorminalEnergy ();
+static int _directPower( uint16_t, uint16_t  );
+static int _realMode(uint16_t  );
+static int _powerBlock(uint16_t);
+
+int tesla_process_single_register(uint16_t address, uint16_t data)
 {
-    {enableDebug,                       process_enableDebug},  // 16 bits
-    {dumpMemory,                         process_dumpMemory},  // 32 bits
-    {firmwareVersion,               process_firmwareVersion},  // 16 bits
-    {directRealTimeout,           process_directRealTimeout},  // 16 bits
-    {directRealHeartbeat,       process_directRealHeartbeat},  // 16 bits
-    {statusFullChargeEnergy, process_statusFullChargeEnergy},  // 32 bits
-    {statusNorminalEnergy,     process_statusNorminalEnergy},
-    {directPower,                       process_directPower},
-    {realMode,                             process_realMode},
-    {powerBlock,                         process_powerBlock},
-    { 0,                                               NULL}
-};
+    int retval;
 
+    switch ( address )
+    {
+        case enableDebugTrace: // Not a modbus register
+            retval = _enableDebugTrace(data);
+            break;
 
-int process_dumpMemory (uint16_t index, uint16_t value)
-{
-    int retval = MODBUS_SUCCESS;
-    static uint32_t mem;
-    static uint32_t readings;
+        case firmwareVersion:
+            retval = _firmwareVersion(data);
+            break;
 
-    //printf("%s - 0x%04X, index = %d \n", __PRETTY_FUNCTION__, value, index);
+        case directRealTimeout:
+            retval = _directRealTimeout(data);
+            break;
 
-    //if (debug) {
-    if ( index ) {
-        mem =  (mem << 16) + __bswap_16(value);
-        printf("%s - memory size %d \n", __PRETTY_FUNCTION__, mem);
+        case directRealHeartbeat:
+            retval = _directRealHeartbeat(data);
+            break;
+
+        case statusFullChargeEnergy:
+            retval = _statusFullChargeEnergy();
+            break;
+
+        case statusNorminalEnergy:
+            retval = _statusNorminalEnergy();
+            break;
+
+        case directPower:
+            retval = _realMode(data);
+            break;
+
+        case realMode:
+            retval = _realMode(data);
+            break;
+
+        case powerBlock:
+            retval = _powerBlock(data);
+            break;
+
+        default:
+            retval = MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
+            break;
+
     }
-
     return retval;
 }
+
 
 //
 // Acks and dismisses alarms
 //
-int process_enableDebug (uint16_t index, uint16_t value)
+int _enableDebugTrace (uint16_t value)
 {
-    int retval = MODBUS_SUCCESS;
-    printf("%s - %s\n", __PRETTY_FUNCTION__, (value & 0x0001)?"TRUE":"FALSE");
-    debug = value?TRUE:FALSE;
-    return retval;
+    debug =  value & 0x0001;
+    uint16_t *address;
+    uint16_t address_offset;
+
+    if (debug) printf("%s - %s\n", __PRETTY_FUNCTION__, debug?"TRUE":"FALSE");
+    address_offset = mb_mapping->start_registers + enableDebugTrace;
+    address = mb_mapping->tab_registers + address_offset;
+    if ( address < (mb_mapping->tab_registers + mb_mapping-> nb_registers) )
+    {
+       *address = debug;
+    }
+    return MODBUS_SUCCESS;
 }
 
 //
 // report dummy version number
 //
-int process_firmwareVersion (uint16_t unused, uint16_t count )
+int _firmwareVersion (uint16_t count)
 {
     uint16_t *address;
     uint16_t address_offset;
@@ -110,33 +145,24 @@ int process_firmwareVersion (uint16_t unused, uint16_t count )
         address[i] = (value << 8) | *p++;
     }
 
-    if (debug) {
-        printf("%s Version = %s \n", __PRETTY_FUNCTION__, version);
-    }
+    if (debug) printf("%s Version = %s \n", __PRETTY_FUNCTION__, version);
+
     return retval;
 }
 
-//
-// Acks and dismisses alarms
-//
-int process_realMode (uint16_t index, uint16_t value)
+int _realMode (uint16_t value)
 {
-    int retval = MODBUS_SUCCESS;
-    if (debug) {
-       printf("%s\n", __PRETTY_FUNCTION__);
-    }
-    return retval;
+    if (debug) printf("%s\n", __PRETTY_FUNCTION__);
+
+    return MODBUS_SUCCESS;
 }
-//
-// Acks and dismisses alarms
-//process_directRealTimeout
-int process_directRealTimeout (uint16_t unused, uint16_t value)
+
+
+int _directRealTimeout (uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
     heartbeatTimeout = value;
-    //if(debug) {
-        printf("%s heartbeatTimeout = %d\n", __PRETTY_FUNCTION__, heartbeatTimeout );
-    //}
+    if(debug) printf("%s heartbeatTimeout = %d\n", __PRETTY_FUNCTION__, heartbeatTimeout );
     heartbeat = 0;
     return retval;
 }
@@ -144,14 +170,12 @@ int process_directRealTimeout (uint16_t unused, uint16_t value)
 //
 // Heartbeat signal. Expected to toggle heartbeat bit very PGM HB Period
 //
-int process_directRealHeartbeat (uint16_t index, uint16_t value)
+int _directRealHeartbeat (uint16_t value)
 {
     int retval = MODBUS_SUCCESS;
     static uint16_t previous_value = 0;
 
-    if (debug) {
-        printf("%s - value:%04x \n", __PRETTY_FUNCTION__, value);
-    }
+    if (debug) printf("%s - value:%04x \n", __PRETTY_FUNCTION__, value);
 
     if ( previous_value == value )
     {
@@ -162,11 +186,10 @@ int process_directRealHeartbeat (uint16_t index, uint16_t value)
 }
 
 
-int process_statusFullChargeEnergy(uint16_t index, uint16_t number_register)
+int _statusFullChargeEnergy()
 {
     uint16_t *address;
     uint16_t address_offset;
-    int retval = MODBUS_SUCCESS; // need to figure out what this constant is
 
     address_offset = mb_mapping->start_registers + statusFullChargeEnergy;
     address = mb_mapping->tab_registers + address_offset;
@@ -175,17 +198,15 @@ int process_statusFullChargeEnergy(uint16_t index, uint16_t number_register)
         *address         = StatusFullChargeEnergy >> 16;
         *(address+1)     = StatusFullChargeEnergy;
     }
-    if (debug) {
-        printf("%s StatusFullChargeEnergy = %d\n", __PRETTY_FUNCTION__, StatusFullChargeEnergy );
-    }
-    return retval;
+    if (debug) printf("%s StatusFullChargeEnergy = %d\n", __PRETTY_FUNCTION__, StatusFullChargeEnergy );
+
+    return MODBUS_SUCCESS;
 }
 
-int process_statusNorminalEnergy(uint16_t index, uint16_t number_register)
+int _statusNorminalEnergy()
 {
     uint16_t *address;
     uint16_t address_offset;
-    int retval = MODBUS_SUCCESS;
 
     address_offset = mb_mapping->start_registers + statusNorminalEnergy;
     address = mb_mapping->tab_registers + address_offset;
@@ -195,20 +216,17 @@ int process_statusNorminalEnergy(uint16_t index, uint16_t number_register)
         *(address+1)     = StatusNorminalEnergy;
 
     }
-    if (debug) {
-        printf("%s StatusNorminalEnergy = %d\n", __PRETTY_FUNCTION__, StatusNorminalEnergy );
-    }
+    if (debug) printf("%s StatusNorminalEnergy = %d\n", __PRETTY_FUNCTION__, StatusNorminalEnergy );
 
-    return retval;
+    return MODBUS_SUCCESS;
 }
 
 
 //
 // Total real power being delivered in kW: range(-32768  to 32767)
 //
-int process_directPower(uint16_t index, uint16_t value)
+int _directPower(uint16_t index, uint16_t value)
 {
-    int retval = MODBUS_SUCCESS;
     static uint32_t val;
 
     if ( index == 0 )
@@ -221,66 +239,35 @@ int process_directPower(uint16_t index, uint16_t value)
         if ( val & sign_bit_mask )
         {
             val = ((~val) + 1);                     // get 2nd complement value
-            if (debug) {
-                printf("%s - battery charging val(-%d)\n", __PRETTY_FUNCTION__, val);
-            }
+            if (debug) printf("%s - battery charging val(-%d)\n", __PRETTY_FUNCTION__, val);
             battery_charging = true;
             battery_discharging = false;
             battery_charge_increment = ( val * battery_charge_resolution);  ;
         }
         else if (val > 0)
         {
-            if (debug) {
-                printf("%s - battery discharging val(%d)\n", __PRETTY_FUNCTION__, val);
-            }
+            if (debug) printf("%s - battery discharging val(%d)\n", __PRETTY_FUNCTION__, val);
             battery_discharging = true;
             battery_charging = false;
             battery_discharge_decrement = (val * battery_discharge_resolution);
         }
         else
         {
-            if (debug) {
-                printf("%s - not charging val(%d)\n", __PRETTY_FUNCTION__, val);
-            }
+            if (debug) printf("%s - not charging val(%d)\n", __PRETTY_FUNCTION__, val);
             battery_discharging = false;
             battery_charging = false;
         }
     }
 
-    return retval;
+    return MODBUS_SUCCESS;
 }
 
-int process_powerBlock(uint16_t index, uint16_t value)
+int _powerBlock(uint16_t value)
 {
-    int retval = MODBUS_SUCCESS;
+    if (debug) printf("%s - value(%d)\n", __PRETTY_FUNCTION__, value);
 
-    printf("%s - value(%d)\n", __PRETTY_FUNCTION__, value);
-    //if ( value != POWER_BLOCK_ALL )
-    //{
-    //    retval = MODBUS_EXCEPTION_ILLEGAL_DATA_VALUE;
-    //}
-    return retval;
+    return MODBUS_SUCCESS;
 }
-
-
-int tesla_process_single_register(uint16_t address, uint16_t data)
-{
-    int retval = MODBUS_EXCEPTION_ILLEGAL_DATA_ADDRESS;
-
-    printf("%s -address(%d), data(%d)\n", __PRETTY_FUNCTION__, address, data);
-    for ( const process_table_t *p = tesla_process_table; p->handler != 0; p++ )
-    {
-        if ( address == p->address )
-        {
-        	printf("%s -address found\n", __PRETTY_FUNCTION__);
-            retval = p->handler(address, data);
-            break;
-        }
-    }
-
-    return retval;
-}
-
 
 int tesla_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint8_t* pdata)
 {
@@ -305,8 +292,6 @@ int tesla_write_multiple_addresses(uint16_t start_address, uint16_t quantity, ui
 
 void tesla_init(init_param_t* param)
 {
-	printf("%s entry\n", __PRETTY_FUNCTION__ );
-
     tesla_thread_param_t* tesla_thread_param;
     setvbuf(stdout, NULL, _IONBF, 0);                          // disable stdout buffering
     mb_mapping = param->modbus_mapping;
@@ -314,15 +299,12 @@ void tesla_init(init_param_t* param)
     tesla_thread_param = (tesla_thread_param_t*) malloc(sizeof (tesla_thread_param_t));
     tesla_thread_param -> terminate = &terminate1;
     pthread_create( &thread1, NULL, tesla_thread_handler, tesla_thread_param);
-	printf("%s exit\n", __PRETTY_FUNCTION__ );
 }
 
 void tesla_dispose()
 {
-	printf("%s entry\n", __PRETTY_FUNCTION__ );
     terminate1 = true;
     pthread_join(thread1, NULL);
-	printf("%s exit\n", __PRETTY_FUNCTION__ );
 }
 
 //
@@ -330,30 +312,22 @@ void tesla_dispose()
 //
 void *tesla_thread_handler( void *ptr )
 {
-	printf("%s entry\n", __PRETTY_FUNCTION__ );
     uint8_t *terminate;
-    char status[12] = "idle";
     tesla_thread_param_t* param = (tesla_thread_param_t*) ptr;
     terminate = param->terminate;
     free(param);
-    modbus_set_debug(ctx, debug);
 
     while ( *terminate == false )
     {
         sleep(1);
         if ( heartbeat > heartbeatTimeout )
         {
-            if ( debug ) {
-                printf("%s: heartbeat expired, current timeout = %d\n", __PRETTY_FUNCTION__, heartbeatTimeout );
-            }
+            if ( debug ) printf("%s: heartbeat expired, current timeout = %d\n", __PRETTY_FUNCTION__, heartbeatTimeout );
             heartbeat = 0;
         }
 
         if (battery_charging)
         {
-            if ( debug ) {
-                strcpy(status,"charging");
-            }
             if ( (state_of_charge + battery_charge_increment) <= battery_fully_charged )
             {
                 state_of_charge += battery_charge_increment;
@@ -366,9 +340,6 @@ void *tesla_thread_handler( void *ptr )
         }
         else if (battery_discharging)
         {
-            if ( debug ) {
-                strcpy(status,"discharging");
-            }
             if ( (state_of_charge - battery_discharge_decrement) >= battery_fully_discharged )
             {
                 state_of_charge -= battery_discharge_decrement;
@@ -379,15 +350,7 @@ void *tesla_thread_handler( void *ptr )
                 battery_discharging = false;
             }
         }
-        else
-        {
-            if ( debug ) {
-                strcpy(status,"idle");
-            }
-        }
-        //update_json_file(state_of_charge, (const char*)status);
         heartbeat++;
     }
-	printf("%s exit\n", __PRETTY_FUNCTION__ );
 }
 

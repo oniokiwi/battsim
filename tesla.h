@@ -22,18 +22,6 @@
 #define powerBlock                    1002
 
 
-// proclet
-int process_enableDebug (uint16_t, uint16_t );
-int process_dumpMemory (uint16_t, uint16_t );
-int process_firmwareVersion (uint16_t, uint16_t );
-int process_directRealTimeout (uint16_t, uint16_t );
-int process_directRealHeartbeat( uint16_t, uint16_t );
-int process_statusFullChargeEnergy(uint16_t, uint16_t );
-int process_statusNorminalEnergy (uint16_t, uint16_t );
-int process_directPower( uint16_t, uint16_t  );
-int process_realMode( uint16_t, uint16_t  );
-int process_powerBlock( uint16_t, uint16_t  );
-
 //
 // Public functions
 //
