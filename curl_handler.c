@@ -103,11 +103,7 @@ void _send_text_plain(const char* payload)
     curl_easy_cleanup(curl);
 }
 
-typedef struct {
-	char *buf;
-    int len;
-    int pos;
-} readarg_t;
+
 
 
 static size_t read_callback(void *ptr, size_t size, size_t nitems, void *stream)
@@ -131,13 +127,12 @@ void _send_application_json(const char* payload, int length)
     curl_slist_append(headers, "Content-Type: application/json");
     curl_slist_append(headers, "charsets: utf-8");
 
-    //printf("%s\n", payload);
     curl = curl_easy_init();
     if (curl)
     {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_URL, readingsURL);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
         curl_easy_setopt(curl, CURLOPT_PUT, 1L);
@@ -146,7 +141,6 @@ void _send_application_json(const char* payload, int length)
         curl_easy_perform(curl);
     }
     curl_easy_cleanup(curl);
-    printf("%s\n", payload);
 }
 
 

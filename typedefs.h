@@ -101,4 +101,10 @@ typedef struct curl_data_struct
     char* payload;
 }queue_item_t;
 
+typedef struct {
+	char *buf;
+    int len;
+    int pos;
+} readarg_t;
+
 #endif
