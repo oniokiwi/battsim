@@ -59,22 +59,6 @@ static int   _ahc_echo(void * cls, struct MHD_Connection * connection, const cha
                        const char * method, const char * version, const char * upload_data,
                         size_t * upload_data_size, void ** ptr);
 
-void _remove_character(char *buffer, int character)
-{
-    char *s,*d;
-
-    d = buffer;
-
-    for ( s = buffer; *s != '\0'; s++)
-    {
-        if ( *s != character )
-        {
-            *d++ = *s;
-        }
-    }
-    *d = '\0';
-}
-
 void _parse_json(const char* str)
 {
     struct json_object *object, *tmp, *jobj;
@@ -94,7 +78,6 @@ void _parse_json(const char* str)
                 length = json_object_array_length(val);
                 tmp = json_object_array_get_idx(val, length -1);
                 strcpy(buf, json_object_to_json_string(tmp));
-                _remove_character(buf,' ');
                 sscanf(buf,"{ \"timestamp\": %ld, \"powerDeliveredkW\": %f, \"stateOfCharge\": %f }", &t, &p, &s);
                 stateOfCharge = (uint16_t)s;
                 break;
