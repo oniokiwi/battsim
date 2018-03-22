@@ -234,7 +234,7 @@ int  engienl_process_single_register(uint16_t address, uint16_t data)
 {
     switch (address)
     {
-    case DebugEnable:
+    case enableDebugTrace:
         _DebugEnable(data);
         break;
 

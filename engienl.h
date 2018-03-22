@@ -10,10 +10,9 @@
 #include <modbus/modbus.h>
 #include "typedefs.h"
 
+#define PowerToDeliver     1
+#define StateOfCharge      2
 
-#define StateOfCharge      1
-#define PowerToDeliver     2
-#define DebugEnable        255
 
 void engienl_init(init_param_t* modbus_mapping);
 void engienl_dispose();
