@@ -473,7 +473,7 @@ void *nec_thread_handler( void *ptr )
         if ( heartbeat > HeartBeatIntervalInSeconds )
         {
             heartbeat = 0;
-            if (debug) printf("heatbeat not received\n");
+            if (debug) printf("heartbeat not received\n");
         }
         if ( dispatch_mode_enable == DispatchModeDispatch )
         {
