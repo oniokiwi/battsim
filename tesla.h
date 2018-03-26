@@ -10,16 +10,19 @@
 #include <modbus/modbus.h>
 #include "typedefs.h"
 
-#define enableDebug                   1
-#define dumpMemory                    2
 #define firmwareVersion               101
-#define directRealTimeout             1023
-#define directRealHeartbeat           1022
 #define statusFullChargeEnergy        205
 #define statusNorminalEnergy          207
-#define directPower                   1020
 #define realMode                      1000
+#define alwaysActive                  1001
 #define powerBlock                    1002
+#define directPower                   1020
+#define directRealHeartbeat           1022
+#define directRealTimeout             1023
+
+
+
+
 
 
 //

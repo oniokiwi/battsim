@@ -55,6 +55,7 @@ static int _statusFullChargeEnergy();
 static int _statusNorminalEnergy ();
 static int _directPower( uint16_t, uint16_t  );
 static int _realMode(uint16_t  );
+static int _alwaysActive (uint16_t value);
 static int _powerBlock(uint16_t);
 
 int tesla_process_single_register(uint16_t address, uint16_t data)
@@ -93,6 +94,10 @@ int tesla_process_single_register(uint16_t address, uint16_t data)
 
         case realMode:
             retval = _realMode(data);
+            break;
+
+        case alwaysActive:
+            retval = _alwaysActive(data);
             break;
 
         case powerBlock:
@@ -152,6 +157,13 @@ int _firmwareVersion (uint16_t count)
 }
 
 int _realMode (uint16_t value)
+{
+    if (debug) printf("%s\n", __PRETTY_FUNCTION__);
+
+    return MODBUS_SUCCESS;
+}
+
+int _alwaysActive (uint16_t value)
 {
     if (debug) printf("%s\n", __PRETTY_FUNCTION__);
 
