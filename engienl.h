@@ -16,6 +16,7 @@
 
 void engienl_init(init_param_t* modbus_mapping);
 void engienl_dispose();
+void engienl_disconnect();
 int  engienl_process_single_register(uint16_t address, uint16_t data);
 int  engienl_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint8_t* pdata);
 

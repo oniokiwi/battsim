@@ -40,6 +40,7 @@ enum DispatchMode
 
 void  nec_init(init_param_t* );
 void  nec_dispose();
+void  nec_disconnect();
 void* nec_thread_handler( void *ptr );
 int   nec_process_single_register(uint16_t address, uint16_t data);
 int   nec_write_multiple_addresses(uint16_t start_address, uint16_t quantity, uint8_t* pdata);

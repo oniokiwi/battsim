@@ -40,6 +40,7 @@
 static modbus_mapping_t *mb_mapping;
 static modbus_t* ctx;
 static unsigned short stateOfCharge;
+static unsigned short stateOfChargeDefault = 50;
 
 static pthread_t thread1;
 static uint8_t terminate1;
@@ -207,6 +208,7 @@ void engienl_init(init_param_t* param)
     mhttpd_thread_param_t* mhttpd_thread_param;
     curl_thread_param_t* curl_thread_param;
 
+    engienl_disconnect();
     mb_mapping = param->modbus_mapping;
     terminate1 = FALSE;
     mhttpd_thread_param = malloc(sizeof (mhttpd_thread_param_t));
@@ -227,6 +229,11 @@ void engienl_dispose()
     terminate1 = true;
     pthread_join(thread1, NULL);
     printf("%s exit\n", __PRETTY_FUNCTION__ );
+}
+
+void engienl_disconnect()
+{
+	stateOfCharge = stateOfChargeDefault;
 }
 
 

@@ -35,6 +35,7 @@ static uint16_t address_offset;
 
 static void (*init)(init_param_t *);
 static void (*dispose)();
+static void (*disconnect)();
 static int (*thread_handler)( void *ptr );
 static int (*process_handler)(uint16_t address, uint16_t data);
 static int (*process_write_multiple_addresses)(uint16_t start_address, uint16_t quantity, uint8_t* pdata);
@@ -110,6 +111,7 @@ static void scan_options(int argc, char* argv[])
             {
                 init = tesla_init;
                 dispose = tesla_dispose;
+                disconnect = tesla_disconnect;
                 process_handler = tesla_process_single_register;
                 process_write_multiple_addresses = tesla_write_multiple_addresses;
                 printf("starting tesla battery simulator application - port (%d)\n", param.port);
@@ -118,6 +120,7 @@ static void scan_options(int argc, char* argv[])
             {
                 init = nec_init;
                 dispose = nec_dispose;
+                disconnect = nec_disconnect;
                 process_handler = nec_process_single_register;
                 process_write_multiple_addresses = nec_write_multiple_addresses;
                 printf("starting nec battery simulator application - port (%d)\n", param.port);
@@ -126,6 +129,7 @@ static void scan_options(int argc, char* argv[])
             {
                 init = engienl_init;
                 dispose = engienl_dispose;
+                disconnect = engienl_disconnect;
                 process_handler = engienl_process_single_register;
                 process_write_multiple_addresses = engienl_write_multiple_addresses;
                 printf("starting engienl battery simulator application - port (%d) "
@@ -185,6 +189,7 @@ int main(int argc, char* argv[])
             {
             case -1:
                 close(s); // close the socket
+                disconnect();
                 modbus_close(param.ctx);
                 modbus_free(param.ctx);
                 param.ctx = NULL;

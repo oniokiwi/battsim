@@ -42,7 +42,8 @@ static const float battery_charge_resolution    = 100.00 / (BATTERY_POWER_RATING
 static const float battery_discharge_resolution = 100.00 / (BATTERY_POWER_RATING * TIME_DISCHARGE_FROM_100_TO_0);  // % decrease in charge per sec
 static const float battery_fully_charged        = 100.00;
 static const float battery_fully_discharged     = 0.0;
-static float state_of_charge = STATE_OF_CHARGET_DEFAULT;
+static const float state_of_charge_default      = 50.00;
+static float state_of_charge = 0;
 
 // proclet
 static int _enableDebugTrace (uint16_t );
@@ -293,6 +294,7 @@ int tesla_write_multiple_addresses(uint16_t start_address, uint16_t quantity, ui
 void tesla_init(init_param_t* param)
 {
     tesla_thread_param_t* tesla_thread_param;
+    tesla_disconnect();                                        // set default SoC
     setvbuf(stdout, NULL, _IONBF, 0);                          // disable stdout buffering
     mb_mapping = param->modbus_mapping;
     terminate1 = FALSE;
@@ -306,6 +308,12 @@ void tesla_dispose()
     terminate1 = true;
     pthread_join(thread1, NULL);
 }
+
+void tesla_disconnect()
+{
+    state_of_charge = state_of_charge_default;
+}
+
 
 //
 // Thread handler

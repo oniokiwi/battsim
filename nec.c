@@ -415,6 +415,7 @@ int _SocRef (uint16_t value)
 void nec_init(init_param_t* init_param)
 {
     thread_param_t* nec_thread_param;
+    nec_disconnect();                                           // set default SoC
     setvbuf(stdout, NULL, _IONBF, 0);                          // disable stdout buffering
     mb_mapping = init_param->modbus_mapping;
     terminate1 = FALSE;
@@ -427,6 +428,11 @@ void nec_dispose()
 {
     terminate1 = true;
     pthread_join(thread1, NULL);
+}
+
+void nec_disconnect()
+{
+    state_of_charge = state_of_charge_default;
 }
 
 
@@ -460,7 +466,6 @@ void *nec_thread_handler( void *ptr )
     ctx = param->ctx;
     terminate = param->terminate;
     free(param);
-    state_of_charge = state_of_charge_default; // set to default state of charge value
 
     while ( *terminate == false )
     {
