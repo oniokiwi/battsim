@@ -46,9 +46,13 @@ static void usage(const char *app_name)
     printf("%s [option <value>] ...\n", app_name);
     printf("\nOptions:\n");
     printf(" -p \t\t # Set Modbus port to listen on for incoming requests (Default 1502)\n");
-    printf(" -? \t\t # Print this help menu\n");
+    printf(" -k \t\t # The URL to submit readings\n");
+    printf(" -t \t\t # The target simulator to start\n");
+    printf(" -u \t\t # The URL to send the target power\n");
+    printf(" -h \t\t # Print this help menu\n");
     printf("\nExamples:\n");
-    printf("%s -p 1502  \t # Change the listen port to 1502\n", app_name);
+    printf("%s -p 1504  \t # Change the listen port to 1504\n", app_name);
+    printf("%s -t TESLA | NEC | ENGIENL\n\n", app_name);
     exit(1);
 }
 
