@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# function to check if a process is alive and running:
+
+_isRunning() {
+    ps -o comm= -C "$1" 2>/dev/null | grep -x "$1" >/dev/null 2>&1
+}
+
+if ! _isRunning battsim; then
+    file="$HOME/workspace/battsim/.currbattserv.txt"
+    while IFS= read -r line
+    do
+        "${HOME}/workspace/battsim/battsim" $line &
+    done <"$file"
+fi
+
+# by now the ecutable should be running unless 
+# .currbattserv.txt file is empty so start with default settings
+if ! _isRunning battsim; then
+    "${HOME}/workspace/battsim/battsim" -t TESLA &
+fi
+    

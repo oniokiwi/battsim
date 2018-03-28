@@ -1,1 +1,1 @@
-* * * * * /home/onio/workspace/mb2http/mbWatchDog
+* * * * * $HOME/workspace/battsim/mbWatchDog

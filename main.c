@@ -59,7 +59,7 @@ static void usage(const char *app_name)
 
 static void init_default(init_param_t * param)
 {
-    const char *app_name = "mbservsim";
+    const char *app_name = "battsim";
     usage(app_name);
     exit(1);
 }
@@ -88,6 +88,7 @@ static void scan_options(int argc, char* argv[])
     int opt;
 
     // set some default options
+    FILE *fp = fopen(".currbattserv.txt", "w+");
     param.port = MODBUS_DEFAULT_PORT;
     strncpy(param.powerToDeliverURL, POWER_TO_DELIVER_URL_DEFAULT, strlen(POWER_TO_DELIVER_URL_DEFAULT));
     strncpy(param.submitReadingsURL, SUBMIT_READINGS_URL_DEFAULT, strlen(SUBMIT_READINGS_URL_DEFAULT));
@@ -114,6 +115,7 @@ static void scan_options(int argc, char* argv[])
                 disconnect = tesla_disconnect;
                 process_handler = tesla_process_single_register;
                 process_write_multiple_addresses = tesla_write_multiple_addresses;
+            	fprintf(fp, "-p %d -t TESLA\n", param.port);
                 printf("starting tesla battery simulator application - port (%d)\n", param.port);
             }
             else if (strncmp("NEC", optarg, strlen(optarg)) == 0)
@@ -123,6 +125,7 @@ static void scan_options(int argc, char* argv[])
                 disconnect = nec_disconnect;
                 process_handler = nec_process_single_register;
                 process_write_multiple_addresses = nec_write_multiple_addresses;
+            	fprintf(fp, "-p %d -t NEC\n", param.port);
                 printf("starting nec battery simulator application - port (%d)\n", param.port);
             }
             else if (strncmp("ENGIENL", optarg, strlen(optarg)) == 0)
@@ -132,6 +135,7 @@ static void scan_options(int argc, char* argv[])
                 disconnect = engienl_disconnect;
                 process_handler = engienl_process_single_register;
                 process_write_multiple_addresses = engienl_write_multiple_addresses;
+            	fprintf(fp, "-p %d -t ENGIENL -u %s -k %s\n", param.port, param.powerToDeliverURL,param.submitReadingsURL);
                 printf("starting engienl battery simulator application - port (%d) "
                         "powerToDeliverURL (%s) "
                         "submitReadingsURL (%s)\n",
@@ -154,6 +158,7 @@ static void scan_options(int argc, char* argv[])
             usage(*argv);
         }
     }
+	fclose(fp);
 }
 
 int main(int argc, char* argv[])
@@ -162,7 +167,6 @@ int main(int argc, char* argv[])
     int rc, s = -1;
     bool done = FALSE;
     init = init_default;
-
 
     modbus_mem_init();
     scan_options(argc, argv);

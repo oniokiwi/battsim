@@ -47,6 +47,11 @@ check:
 	@echo ' HDR    = $(HDR)             '
 	@echo '#############################'
 	
+cronjobstart:
+	crontab -u ${USER} cronjob.txt
+
+cronjobstop:
+	crontab -u ${USER} -r		
 
 clean:
 	rm -f *.o $(TARGET) 
